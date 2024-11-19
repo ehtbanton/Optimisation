@@ -21,13 +21,17 @@ plt.figure(figsize=(15, 6))
 # 3D Surface Plot
 ax1 = plt.subplot(121, projection='3d')
 surface = ax1.plot_surface(X, Y, Z, cmap='viridis', 
-                          rstride=1, cstride=1, alpha=0.8,
+                          rstride=1, cstride=1, alpha=0.4,  # Increased transparency
                           linewidth=0, antialiased=True)
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')
 ax1.set_zlabel('f(x,y)')
 ax1.set_title("3D Plot of Rosenbrock's Function")
 
+# Plot minimum point in 3D plot
+ax1.scatter([1], [1], [0], color='red', s=20, label='Minimum (1,1)', 
+            linewidth=1, edgecolor='black')
 
+ax1.legend()
 
 plt.show()
