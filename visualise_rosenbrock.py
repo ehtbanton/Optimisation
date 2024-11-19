@@ -8,3 +8,15 @@ def rosenbrock(x, y):
     f(x,y) = 100(y - x^2)^2 + (1-x)^2
     """
     return 100 * (y - x**2)**2 + (1 - x)**2
+
+# Create meshgrid for plotting
+x = np.linspace(-2, 2, 20)
+y = np.linspace(-2, 2, 20)
+X, Y = np.meshgrid(x, y)
+Z = rosenbrock(X, Y)
+
+# Create figure with two subplots
+plt.figure(figsize=(15, 6))
+
+
+plt.show()
