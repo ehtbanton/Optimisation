@@ -33,6 +33,43 @@ def gradient_descent(start_point, learning_rate=0.0001, max_iter=1000):
     
     return np.array(path)
 
+def newton_method(start_point, max_iter=1000):
+    path = [start_point]
+    point = np.array(start_point)
+    
+    for _ in range(max_iter):
+        grad = gradient(point[0], point[1])
+        if np.linalg.norm(grad) < 1e-6:
+            break
+        H = hessian(point[0], point[1])
+        try:
+            point = point - np.linalg.solve(H, grad)
+            path.append(point.copy())
+        except np.linalg.LinAlgError:
+            break
+    
+    return np.array(path)
+
+def gauss_newton(start_point, max_iter=1000):
+    path = [start_point]
+    point = np.array(start_point)
+    
+    for _ in range(max_iter):
+        x, y = point
+        r = np.array([10*(y - x**2), 1-x])
+        J = np.array([[-20*x, 10], [-1, 0]])
+        
+        try:
+            delta = -np.linalg.solve(J.T @ J, J.T @ r)
+            if np.linalg.norm(delta) < 1e-6:
+                break
+            point = point + delta
+            path.append(point.copy())
+        except np.linalg.LinAlgError:
+            break
+    
+    return np.array(path)
+
 def plot_optimization(method_name, path):
     plt.figure(figsize=(10, 8))
     
@@ -67,7 +104,8 @@ start_point = np.array([random.uniform(-2, 2), random.uniform(-1, 1)])
 # Run optimization methods
 methods = [
     ('Gradient Descent', lambda p: gradient_descent(p)),
-
+    ('Newton\'s Method', lambda p: newton_method(p)),
+    ('Gauss-Newton Method', lambda p: gauss_newton(p))
 ]
 
 for method_name, method_func in methods:
