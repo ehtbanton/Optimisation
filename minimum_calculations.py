@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import random
+from scipy.optimize import minimize
 
 def rosenbrock(x, y):
     """Calculate Rosenbrock's function value at point (x,y)"""
@@ -107,6 +108,22 @@ def gauss_newton(start_point, max_iter=1000):
     
     return np.array(path)
 
+def nelder_mead(start_point, max_iter=1000):
+    """Optimize using Nelder-Mead method and track the path"""
+    path = [start_point]
+    
+    def rosenbrock_wrapper(x):
+        point = np.array([x[0], x[1]])
+        path.append(point)
+        return rosenbrock(x[0], x[1])
+    
+    result = minimize(rosenbrock_wrapper, 
+                     start_point, 
+                     method='Nelder-Mead',
+                     options={'maxiter': max_iter, 'xatol': 1e-8, 'fatol': 1e-8})
+    
+    return np.array(path)
+
 def plot_single_optimization(ax, method_func, start_point, method_name=""):
     # Create contour plot
     x = np.linspace(-2, 2, 100)
@@ -123,15 +140,15 @@ def plot_single_optimization(ax, method_func, start_point, method_name=""):
     path = method_func(start_point)
     
     # Plot optimization path with points at each step
-    ax.plot(path[:, 0], path[:, 1], 'r-', linewidth=1.5, zorder=3)
-    ax.plot(path[:, 0], path[:, 1], 'r.', markersize=3, zorder=4)
-    ax.plot(path[0, 0], path[0, 1], 'bo', markersize=6, zorder=5)
-    ax.plot(path[-1, 0], path[-1, 1], 'g*', markersize=8, zorder=5)
+    ax.plot(path[:, 0], path[:, 1], 'r-', linewidth=1.0, zorder=3)
+    ax.plot(path[:, 0], path[:, 1], 'r.', markersize=2, zorder=4)
+    ax.plot(path[0, 0], path[0, 1], 'bo', markersize=4, zorder=5)
+    ax.plot(path[-1, 0], path[-1, 1], 'g*', markersize=6, zorder=5)
     
     ax.set_title(f"{method_name}\nStart: ({start_point[0]:.1f}, {start_point[1]:.1f})", 
                  fontsize=8, pad=5)
-    ax.set_xlabel('x', fontsize=8)
-    ax.set_ylabel('y', fontsize=8)
+    ax.set_xlabel('x', fontsize=7)
+    ax.set_ylabel('y', fontsize=7)
     ax.grid(True, alpha=0.2)
     ax.set_xlim(-2, 2)
     ax.set_ylim(-2, 2)
@@ -139,25 +156,46 @@ def plot_single_optimization(ax, method_func, start_point, method_name=""):
     
     return contourf
 
-# Set random seed for reproducibility
-np.random.seed(49)
+# [Previous imports and function definitions remain exactly the same until the figure creation]
 
-# Create figure with 9 subplots (3x3)
-fig, axes = plt.subplots(3, 3, figsize=(12, 10))
-plt.subplots_adjust(top=0.85, bottom=0.1, hspace=0.4, wspace=0.3, right=0.85)
+# Create figure with 4x3 subplots
+fig = plt.figure(figsize=(16, 18))
+
+# Create GridSpec with adjusted margins but less internal spacing
+gs = plt.GridSpec(4, 3, figure=fig,
+                 height_ratios=[1, 1, 1, 1],
+                 width_ratios=[1, 1, 1],
+                 hspace=0.8,     # Reduced spacing between plots
+                 wspace=0.4,     # Reduced spacing between plots
+                 top=0.88,      # Keep the extra space for title
+                 bottom=0.05,
+                 left=0.15,
+                 right=0.75)    # Keep the space for legend
+
+# Create axes without reducing their size
+axes = []
+for i in range(4):
+    row = []
+    for j in range(3):
+        cell = plt.subplot(gs[i, j])
+        # Remove the size reduction, let plots take up more of their allocated space
+        row.append(cell)
+    axes.append(row)
+axes = np.array(axes)
 
 # Add overall title
 fig.suptitle('Comparison of Optimization Methods for Rosenbrock Function\n' + 
-             'Gradient Descent vs Newton\'s Method vs Gauss-Newton', 
+             'Gradient Descent vs Newton\'s Method vs Gauss-Newton vs Nelder-Mead', 
              fontsize=12, y=0.95)
 
+# Methods and start points
 methods = [
     ('Gradient Descent', gradient_descent),
     ('Newton\'s Method', newton_method),
-    ('Gauss-Newton Method', gauss_newton)
+    ('Gauss-Newton Method', gauss_newton),
+    ('Nelder-Mead Simplex', nelder_mead)
 ]
 
-# Generate three different starting points
 start_points = [
     np.array([-1.5, 1.0]),
     np.array([0.0, 0.0]),
@@ -170,23 +208,31 @@ for i, (method_name, method_func) in enumerate(methods):
     for j, start_point in enumerate(start_points):
         contourf = plot_single_optimization(axes[i, j], method_func, start_point, method_name)
 
-# Add colorbar
-cbar_ax = fig.add_axes([0.87, 0.1, 0.02, 0.75])  # [left, bottom, width, height]
+# Add colorbar with adjusted position
+cbar_ax = fig.add_axes([0.78, 0.05, 0.02, 0.87])
 cbar = fig.colorbar(contourf, cax=cbar_ax, label='Function Value')
-cbar.ax.tick_params(labelsize=8)
-cbar.set_label('Function Value', size=10)
+cbar.ax.tick_params(labelsize=7)
+cbar.set_label('Function Value', size=9)
 
-# Create a single legend with matching styles
+# Create a separate axes for the legend
+legend_ax = fig.add_axes([0.85, 0.70, 0.15, 0.2])
+legend_ax.axis('off')
+
+# Add legend
 legend_elements = [
     plt.Line2D([0], [0], color='r', linestyle='-', label='Optimization path'),
     plt.Line2D([0], [0], color='r', marker='.', linestyle='none', 
-               label='Calculated points', markersize=5),
+               label='Calculated points', markersize=4),
     plt.Line2D([0], [0], marker='o', color='w', label='Start point',
-               markerfacecolor='b', markersize=6),
+               markerfacecolor='b', markersize=5),
     plt.Line2D([0], [0], marker='*', color='w', label='End point',
-               markerfacecolor='g', markersize=8)
+               markerfacecolor='g', markersize=7)
 ]
-fig.legend(handles=legend_elements, loc='upper right', 
-          bbox_to_anchor=(0.84, 0.99), fontsize=10)
+
+legend_ax.legend(handles=legend_elements, 
+                loc='center',
+                fontsize=8,
+                frameon=True,
+                borderaxespad=2)
 
 plt.show()
